@@ -36,6 +36,7 @@ include("jnienv2.jl")
 using .JNI
 
 include("core.jl")
+include("jni_arrays.jl")
 include("convert.jl")
 include("reflect.jl")
 
