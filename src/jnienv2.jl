@@ -1,5 +1,5 @@
 module JNI
-import ..JavaCall: JNIEnv, JavaVM, jbyte, jchar, jshort, jint, jlong, jsize, jdouble, jfloat, jboolean
+import ..JavaCall: JNIEnv, JavaVM, jbyte, jchar, jshort, jint, jlong, jsize, jdouble, jfloat, jboolean, JValue
 typealias jobject Ptr{Void}
 typealias jclass Ptr{Void}
 typealias jthrowable Ptr{Void}
@@ -18,7 +18,7 @@ typealias jlongArray Ptr{Void}
 typealias jfloatArray Ptr{Void}
 typealias jdoubleArray Ptr{Void}
 typealias jcharArray Ptr{Void}
-typealias jvalue Int64
+typealias jvalue JValue
 
 export GetVersion
 GetVersion(env::Ptr{JNIEnv}) =

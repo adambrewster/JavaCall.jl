@@ -32,7 +32,7 @@ end
 
 
 function convert_args(argtypes::Tuple, args...)
-    convertedArgs = Array(Int64, length(args))
+    convertedArgs = Array(JValue, length(args))
     savedArgs = Array(Any, length(args))
     for i in 1:length(args)
         r = convert_arg(argtypes[i], args[i])

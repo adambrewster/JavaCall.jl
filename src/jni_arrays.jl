@@ -24,6 +24,7 @@ Base.length(a::JavaArray) = GetArrayLength(penv, a.ptr)
 Base.endof(a::JavaArray) = length(a)
 Base.linearindexing{T}(::Type{JavaArray{T}}) = Base.LinearFast()
 Base.size(a::JavaArray) = (length(a),)
+Base.convert(::Type{JValue}, x::JavaArray) = convert(JValue, x.ptr)
 Base.similar{T}(a::JavaArray, ::Type{T}, dim::NTuple{1,Int}) = jnewarray(T, dim[1])
 
 function jnewarray{T}(::Type{JavaObject{T}}, siz::Int)

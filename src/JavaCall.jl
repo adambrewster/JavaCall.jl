@@ -29,6 +29,7 @@ else
 	const unsafe_convert = Base.unsafe_convert
 end
 
+bitstype 64 JValue
 
 include("jvm.jl")
 include("jnienv.jl")

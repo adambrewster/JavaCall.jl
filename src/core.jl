@@ -30,7 +30,6 @@ function deleteref(x::JavaObject)
     return
 end
 
-
 isnull(obj::Ptr{Void}) = obj == C_NULL
 isnull(obj::JavaObject) = obj.ptr == C_NULL
 isnull(obj::JavaMetaClass) = obj.ptr == C_NULL
@@ -49,13 +48,14 @@ function JString(str::AbstractString)
     end
 end
 
-# jvalue(v::Integer) = int64(v) << (64-8*sizeof(v))
-jvalue(v::Integer) = @compat Int64(v)
-jvalue(v::Float32) = jvalue(reinterpret(Int32, v))
-jvalue(v::Float64) = jvalue(reinterpret(Int64, v))
-jvalue(v::Ptr) = jvalue(@compat Int(v))
-
-
+jvalue(x) = convert(JValue, x)
+convert(::Type{JValue}, x::Int64) = reinterpret(JValue, x)
+convert(::Type{JValue}, x::UInt64) = reinterpret(JValue, x)
+convert(::Type{JValue}, x::Float64) = reinterpret(JValue, x)
+convert(::Type{JValue}, x::Integer) = convert(JValue, @compat Int64(x))
+convert(::Type{JValue}, x::Float32) = convert(JValue, reinterpret(Int32, x))
+convert(::Type{JValue}, x::Ptr) = convert(JValue, Int(x))
+convert(::Type{JValue}, x::JavaObject) = convert(JValue, x.ptr)
 
 macro jimport(class)
     if isa(class, Expr)
@@ -220,7 +220,7 @@ function geterror(allow=false)
         if jclass==C_NULL; error("Java Exception thrown, but no details could be retrieved from the JVM"); end
         jmethodId=GetMethodID(penv, jclass, "toString", "()Ljava/lang/String;")
         if jmethodId==C_NULL; error("Java Exception thrown, but no details could be retrieved from the JVM"); end
-        res = CallObjectMethodA(penv, jthrow, jmethodId, Int[])
+        res = CallObjectMethodA(penv, jthrow, jmethodId, JValue[])
         if res==C_NULL; error("Java Exception thrown, but no details could be retrieved from the JVM"); end
         msg = bytestring(JString(res))
         DeleteLocalRef(penv, jthrow)
