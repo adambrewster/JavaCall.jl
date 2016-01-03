@@ -20,44 +20,52 @@ function deleteref(x::JavaArray)
     return
 end
 
-Base.length(a::JavaArray) = GetArrayLength(penv, a.ptr)
+Base.length(a::JavaArray) = a.ptr == C_NULL ? 0 : Int(GetArrayLength(penv, a.ptr))
 Base.endof(a::JavaArray) = length(a)
 Base.linearindexing{T}(::Type{JavaArray{T}}) = Base.LinearFast()
 Base.size(a::JavaArray) = (length(a),)
 Base.convert(::Type{JValue}, x::JavaArray) = convert(JValue, x.ptr)
 Base.similar{T}(a::JavaArray, ::Type{T}, dim::NTuple{1,Int}) = jnewarray(T, dim[1])
 
-function jnewarray{T}(::Type{JavaObject{T}}, siz::Int)
-    array = NewObjectArray(penv, siz, metaclass(T).ptr, C_NULL)
+signature{T}(::Type{JavaArray{T}}) = symbol("[", signature(T))
+metaclass{T}(t::Type{JavaArray{T}}) = metaclass(signature(t))
+metaclass{T}(a::JavaArray{T}) = metaclass(typeof(a))
+
+typealias JRef Union{JavaObject,JavaArray}
+
+function jnewarray{T<:JRef}(t::Type{T}, siz::Int)
+    array = NewObjectArray(penv, siz, metaclass(t).ptr, C_NULL)
     if array == C_NULL geterror(true) end
-    JavaArray(JavaObject{T}, array)
+    JavaArray(t, array)
 end
 
-function Base.getindex{T}(a::JavaArray{JavaObject{T}}, i::Int)
+function Base.getindex{T<:JRef}(a::JavaArray{T}, i::Int)
+    if a.ptr == C_NULL error("NullPointerException") end
     x = GetObjectArrayElement(penv, a.ptr, i-1)
-    geterror()
-    return x
+    if x == nothing geterror() end
+    return T(x)
 end
-Base.getindex{T}(a::JavaArray{JavaObject{T}}, i::AbstractVector{Int}) = JavaObject{T}[a[ii] for ii in i]
+Base.getindex{T<:JRef}(a::JavaArray{T}, i::AbstractVector{Int}) = T[a[ii] for ii in i]
 
-function Base.setindex!{T}(a::JavaArray{JavaObject{T}}, v::JavaObject{T}, i::Int)
-    x = SetObjectArrayElement(penv, a.ptr, i-1, v)
-    geterror(true)
+function Base.setindex!{T<:JRef}(a::JavaArray{T}, v::T, i::Int)
+    if a.ptr == C_NULL error("NullPointerException") end
+    SetObjectArrayElement(penv, a.ptr, i-1, v.ptr)
+    geterror()
     return v
 end
 
-function Base.setindex!{T}(a::JavaArray{JavaObject{T}}, v::JavaObject{T}, i::AbstractVector{Int})
+function Base.setindex!{T<:JRef}(a::JavaArray{T}, v::T, i::AbstractVector{Int})
     n = 1
     for ii in i
-        a[ii] = v
+        a[ii] = v.ptr
         n += 1
     end
 end
 
-function Base.setindex!{T}(a::JavaArray{JavaObject{T}}, v::AbstractArray{JavaObject{T},1}, i::AbstractVector{Int})
+function Base.setindex!{T<:JRef}(a::JavaArray{T}, v::AbstractArray{T,1}, i::AbstractVector{Int})
     n = 1
     for ii in i
-        a[ii] = v[n]
+        a[ii] = v[n].ptr
         n += 1
     end
 end
@@ -78,6 +86,7 @@ for t in ["Boolean", "Byte", "Char", "Short", "Int", "Long", "Float", "Double"]
     end
 
     @eval function Base.getindex(a::JavaArray{$T}, i::UnitRange)
+        if a.ptr == C_NULL error("NullPointerException") end
         x = Array($T, length(i))
         $(get)(penv, a.ptr, start(i)-1, length(i), x)
         geterror()
@@ -85,6 +94,7 @@ for t in ["Boolean", "Byte", "Char", "Short", "Int", "Long", "Float", "Double"]
     end
 
     @eval function Base.setindex!(a::JavaArray{$T}, v::Array{$T}, i::UnitRange)
+        if a.ptr == C_NULL error("NullPointerException") end
         $(set)(penv, a.ptr, start(i)-1, length(i), v)
         return v
     end

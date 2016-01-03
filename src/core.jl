@@ -56,6 +56,7 @@ convert(::Type{JValue}, x::Integer) = convert(JValue, @compat Int64(x))
 convert(::Type{JValue}, x::Float32) = convert(JValue, reinterpret(Int32, x))
 convert(::Type{JValue}, x::Ptr) = convert(JValue, Int(x))
 convert(::Type{JValue}, x::JavaObject) = convert(JValue, x.ptr)
+convert(::Type{JValue}, x::JavaMetaClass) = convert(JValue, x.ptr)
 
 macro jimport(class)
     if isa(class, Expr)
